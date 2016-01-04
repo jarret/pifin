@@ -12,4 +12,4 @@ Example:
 
 ![alt text][dayReportExample]
 
-[dayReportExample]: https://github.com/jarret/pifin/dayReportExample.png "DayReportExample"
+[dayReportExample]: https://github.com/jarret/pifin/blob/master/dayReportExample.png "DayReportExample"
