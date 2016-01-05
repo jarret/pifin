@@ -13,3 +13,7 @@ Example:
 ![alt text][dayReportExample]
 
 [dayReportExample]: https://github.com/jarret/pifin/blob/master/dayReportExample.png "DayReportExample"
+
+## currencyReport.py
+
+This tool takes a list of currency symbols (USD, CAD, etc.) in a file. A matrix of the exchange rate of each currency paired with every other currency in the list is outputted.
