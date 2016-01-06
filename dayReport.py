@@ -3,6 +3,7 @@
 import os
 import sys
 import datetime
+from multiprocessing import Pool
 
 from yahoo_finance import Share as YFShare
 
@@ -53,15 +54,26 @@ if not os.path.isfile(symbolFile):
 
 symbolFile = os.path.abspath(symbolFile)
 
+inputSymbols = []
+for inputLine in open(symbolFile).readlines():
+    symbol = inputLine.rstrip()
+    inputSymbols.append(symbol)
+
 ################################################################################
 # query Yahoo for the information each symbol
 ################################################################################
 
-refs = []
-for line in open(symbolFile).readlines():
-    symbol = line.rstrip()
-    ref = Share(symbol)
-    refs.append(ref)
+def make_share_instance(symbol):
+    if DEBUG:
+        print "querying %s" % symbol
+    share = Share(symbol)
+    if DEBUG:
+        print "got %s" % symbol
+    return share
+
+# use a process pool to send the queries in parallel
+pool = Pool(processes=len(inputSymbols))
+shares = pool.map(make_share_instance, inputSymbols)
 
 ################################################################################
 # utilities
@@ -112,12 +124,12 @@ def symbol_to_str(symbol):
 print "fetched at: %s" % datetime.datetime.now()
 print "SYMBOL     NAME                       PRICE   %CHNG"
 print "---------------------------------------------------"
-for ref in refs:
-    name = ref.get_name()
-    price = float(ref.get_price())
-    currency = ref.get_currency()
-    percent_change = ref.get_percent_change()
-    symbol = ref.get_symbol()
+for share in shares:
+    name = share.get_name()
+    price = float(share.get_price())
+    currency = share.get_currency()
+    percent_change = share.get_percent_change()
+    symbol = share.get_symbol()
     print "%s %s %s %s %s" % (symbol_to_str(symbol), name_to_str(name),
                               price_to_str(price), currency,
                               percent_change_to_str(percent_change))
