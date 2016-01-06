@@ -3,6 +3,7 @@
 import os
 import sys
 import datetime
+from multiprocessing import Pool
 
 from yahoo_finance import Currency as YFCurrency
 
@@ -55,6 +56,49 @@ for line in open(currencyFile).readlines():
     currencyNames.append(currencyName)
 
 ################################################################################
+# figure out which currency pairs we need to look up
+################################################################################
+
+currencyNamePairs = []
+for base_currency_name in currencyNames:
+    for quote_currency_name in currencyNames:
+        if base_currency_name != quote_currency_name:
+            currencyNamePair = {}
+            currencyNamePair['base'] = base_currency_name
+            currencyNamePair['quote'] = quote_currency_name
+            currencyNamePairs.append(currencyNamePair)
+
+################################################################################
+# fetch data for currency pairs
+################################################################################
+
+def make_currency_pair_instance(currencyNamePair):
+    if DEBUG:
+        print "querying %s %s" % (currencyNamePair['base'],
+                                  currencyNamePair['quote'])
+    currencyPair = CurrencyPair(currencyNamePair['base'],
+                                currencyNamePair['quote'])
+    if DEBUG:
+        print "got %s %s" % (currencyNamePair['base'],
+                             currencyNamePair['quote'])
+    return currencyPair
+
+#use a process pool to send the queries in parallel
+pool = Pool(processes=len(currencyNamePairs))
+currencyPairs = pool.map(make_currency_pair_instance, currencyNamePairs)
+
+################################################################################
+# get rate from currency pair instance
+################################################################################
+
+def get_currency_pair_rate(base_currency_name, quote_currency_name):
+    for pair in currencyPairs:
+        if pair.base_currency == base_currency_name and \
+           pair.quote_currency == quote_currency_name:
+            return pair.get_rate()
+    return None
+
+################################################################################
 # format particular strings
 ################################################################################
 
@@ -77,8 +121,8 @@ def print_base_line(base_currency_name):
         if quote_currency_name == base_currency_name:
             rate = 1.0
         else:
-            rate = CurrencyPair(base_currency_name,
-                                quote_curency_name).get_rate()
+            rate = get_currency_pair_rate(base_currency_name,
+                                          quote_currency_name)
         line = line + "%s" % rate_to_str(rate)
     print line + " |"
 
