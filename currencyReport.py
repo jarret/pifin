@@ -14,10 +14,11 @@ DEBUG = False
 ################################################################################
 
 class CurrencyPair(YFCurrency):
-    def __init__(self, base, quote):
-        super(CurrencyPair, self).__init__("%s%s" % (base, quote))
-        self.base_currency = base
-        self.quote_currency = quote
+    def __init__(self, base_currency_name, quote_currency_name):
+        super(CurrencyPair, self).__init__("%s%s" % (base_currency_name,
+                                                     quote_currency_name))
+        self.base_currency = base_currency_name
+        self.quote_currency = quote_currency_name
 
     def _print_data(self, data):
         for label, val in data.items():
@@ -48,10 +49,10 @@ if not os.path.isfile(currencyFile):
 
 currencyFile = os.path.abspath(currencyFile)
 
-currencies = []
+currencyNames = []
 for line in open(currencyFile).readlines():
-    currency = line.rstrip()
-    currencies.append(currency)
+    currencyName = line.rstrip()
+    currencyNames.append(currencyName)
 
 ################################################################################
 # format particular strings
@@ -66,23 +67,24 @@ def rate_to_str(rate):
 
 def print_horizontal_bar():
     bar = "---------"
-    for currency in currencies:
+    for currency in currencyNames:
         bar = bar + "-----------"
     print bar + "--"
 
-def print_base_line(base):
-    line = "| 1 %s |" % base
-    for quote in currencies:
-        if quote == base:
+def print_base_line(base_currency_name):
+    line = "| 1 %s |" % base_currency_name
+    for quote_curency_name in currencyNames:
+        if quote_curency_name == base_currency_name:
             rate = 1.0
         else:
-            rate = CurrencyPair(base, quote).get_rate()
+            rate = CurrencyPair(base_currency_name,
+                                quote_curency_name).get_rate()
         line = line + "%s" % rate_to_str(rate)
     print line + " |"
 
 def print_title_line():
     titleBar = "|       |"
-    for currency in currencies:
+    for currency in currencyNames:
         titleBar = titleBar + "%11s" % currency
     print titleBar + " |"
 
@@ -90,6 +92,6 @@ print "fetched at: %s" % datetime.datetime.now()
 print_horizontal_bar()
 print_title_line()
 print_horizontal_bar()
-for base in currencies:
-    print_base_line(base)
+for base_currency_name in currencyNames:
+    print_base_line(base_currency_name)
 print_horizontal_bar()
