@@ -73,8 +73,8 @@ def print_horizontal_bar():
 
 def print_base_line(base_currency_name):
     line = "| 1 %s |" % base_currency_name
-    for quote_curency_name in currencyNames:
-        if quote_curency_name == base_currency_name:
+    for quote_currency_name in currencyNames:
+        if quote_currency_name == base_currency_name:
             rate = 1.0
         else:
             rate = CurrencyPair(base_currency_name,
