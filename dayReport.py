@@ -39,7 +39,79 @@ class Share(YFShare):
         return fetchedData
 
 ################################################################################
-# deal with input symbol file
+# report class
+################################################################################
+
+class DayReport(object):
+    def __init__(self, symbols):
+        self.symbols = symbols
+        # terminal colors
+        self.BLUE = '\033[94m'
+        self.GREEN = '\033[92m'
+        self.RED = '\033[91m'
+        self.ENDC = '\033[0m'
+        self.BOLD = '\033[1m'
+        self.UNDERLINE = '\033[4m'
+
+    def fetch(self):
+        # use a process pool to send the queries in parallel
+        pool = Pool(processes=len(self.symbols))
+        self.shares = pool.map(Share, self.symbols)
+
+    def _greenify(self, string):
+        return self.GREEN + string + self.ENDC
+
+    def _redify(self, string):
+        return self.RED + string + self.ENDC
+
+    def _boldify(self, string):
+        return self.BOLD + string + self.ENDC
+
+    def _price_to_str(self, price):
+        return "%8s" % ("%.2f" % price)
+
+    def _name_to_str(self, name):
+        return "%-20s" % name[:20]
+
+    def _percent_change_to_str(self, percent_change):
+        isNegative = (percent_change[0] == '-')
+        val = float(percent_change[1:-1])
+        isZero = (val == 0.0)
+        valstr = "%6.2f" % val
+        if isNegative:
+            return self._redify(valstr)
+        if isZero:
+            return valstr
+        return self._greenify(valstr)
+
+    def _symbol_to_str(self, symbol):
+        return self._boldify("%-10s" % symbol)
+
+    def __str__(self):
+        string = ""
+        if (self.shares == None):
+            return "(not fetched)"
+        string = string + "fetched at: %s\n" % datetime.datetime.now()
+        string = string + \
+            "SYMBOL     NAME                       PRICE   %CHNG\n"
+        string = string + \
+            "---------------------------------------------------\n"
+        for share in self.shares:
+            name = share.get_name()
+            price = float(share.get_price())
+            currency = share.get_currency()
+            percent_change = share.get_percent_change()
+            symbol = share.get_symbol()
+            string = string + "%s %s %s %s %s\n" % (self._symbol_to_str(symbol),
+                                                  self._name_to_str(name),
+                                                  self._price_to_str(price),
+                                                  currency,
+                                    self._percent_change_to_str(percent_change))
+        return string
+
+
+################################################################################
+# main execution
 ################################################################################
 
 usage = "USAGE = ./dayReport.py <symbolFile>"
@@ -58,78 +130,6 @@ inputSymbols = []
 for inputLine in open(symbolFile).readlines():
     symbol = inputLine.rstrip()
     inputSymbols.append(symbol)
-
-################################################################################
-# query Yahoo for the information each symbol
-################################################################################
-
-def make_share_instance(symbol):
-    if DEBUG:
-        print "querying %s" % symbol
-    share = Share(symbol)
-    if DEBUG:
-        print "got %s" % symbol
-    return share
-
-# use a process pool to send the queries in parallel
-pool = Pool(processes=len(inputSymbols))
-shares = pool.map(make_share_instance, inputSymbols)
-
-################################################################################
-# utilities
-################################################################################
-
-# terminal colors
-BLUE = '\033[94m'
-GREEN = '\033[92m'
-RED = '\033[91m'
-ENDC = '\033[0m'
-BOLD = '\033[1m'
-UNDERLINE = '\033[4m'
-
-def greenify(string):
-    return GREEN + string + ENDC
-
-def redify(string):
-    return RED + string + ENDC
-
-################################################################################
-# format particular strings
-################################################################################
-
-def price_to_str(price):
-    return "%8s" % ("%.2f" % price)
-
-def name_to_str(name):
-    return "%-20s" % name[:20]
-
-def percent_change_to_str(percent_change):
-    isNegative = (percent_change[0] == '-')
-    val = float(percent_change[1:-1])
-    isZero = (val == 0.0)
-    valstr = "%6.2f" % val
-    if isNegative:
-        return redify(valstr)
-    if isZero:
-        return valstr
-    return greenify(valstr)
-
-def symbol_to_str(symbol):
-    return "%-10s" % symbol
-
-################################################################################
-# output table
-################################################################################
-
-print "fetched at: %s" % datetime.datetime.now()
-print "SYMBOL     NAME                       PRICE   %CHNG"
-print "---------------------------------------------------"
-for share in shares:
-    name = share.get_name()
-    price = float(share.get_price())
-    currency = share.get_currency()
-    percent_change = share.get_percent_change()
-    symbol = share.get_symbol()
-    print "%s %s %s %s %s" % (symbol_to_str(symbol), name_to_str(name),
-                              price_to_str(price), currency,
-                              percent_change_to_str(percent_change))
+report = DayReport(inputSymbols)
+report.fetch()
+print report
